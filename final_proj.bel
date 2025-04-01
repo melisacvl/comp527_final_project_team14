@@ -1,0 +1,48 @@
+%% COMP 527 Final Project
+%% Beluga mechanization for Gödel's system T 
+%% Team 14: Tortoise and the Achilles
+
+%% The goal of this tutorial is to study the extension of ordinary logic with natural numbers and recursion over natural numbers.
+
+%%%%%%%%%%%%%%%%
+%% Objectives %%
+%%%%%%%%%%%%%%%%
+
+%% Inherit natural deduction calculus including existence and universal qualifiers
+%% Implement the natural numbers as a recursive type (with zero and a successor)
+%% Implement primitive recursion in the same way Gödel did 
+%% Implement basic arithmetic operations using primitive recursion 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Trial 1: Defining Natural Numbers %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% this section is from the tutorial, need to check more if we can apply it to our project
+
+%% We can define natural numbers in a standard inductive way:
+LF nat : type =
+  | zero : nat
+  | succ : nat → nat
+;
+
+rec add_nat : [⊢ nat] → [⊢ nat] → [⊢ nat] =
+fn a b ⇒ case a of
+  | [⊢ zero] ⇒ b
+  | [⊢ succ M] ⇒
+	let [⊢ N] = add_nat [⊢ M] b in
+	[⊢ succ N]
+;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Trial 2: Defining Gödel's System T %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% Defining types and terms in Gödel's System T
+
+LF tp : type =
+  | nat : tp                % natural number type
+  | arr : tp -> tp -> tp    % function type
+
+LF tm : tp -> type =
+  | zero : tm nat
+  | succ : tm nat -> tm nat
+  % | rec : ? 

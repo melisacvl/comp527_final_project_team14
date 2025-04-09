@@ -4,27 +4,98 @@
 
 %% The goal of this tutorial is to study the extension of ordinary logic with natural numbers and recursion over natural numbers.
 
+%%%%%%%%%%%%%
+%%Questions%%
+%%%%%%%%%%%%%
+
+%% 1. Is there syntax to do this without any reference to rec because we want to make it clear we're not using Beluga Recursion -- see add_nat thats commented out
+%% 2. any advice for add_nat in general using prim_rec??
+%% 3. can you check our natural deduction calculus implemenation within our system T tm?? not sure if this a valid way to inherit it, but the example works
+
 %%%%%%%%%%%%%%%%
 %% Objectives %%
 %%%%%%%%%%%%%%%%
 
 %% Inherit natural deduction calculus including existence and universal qualifiers
-%% Implement the natural numbers as a recursive type (with zero and a successor)
-%% Implement primitive recursion in the same way Gödel did 
+%% Implement the natural numbers (with zero and a successor)
+%% Implement primitive recursion in the same way Gödel did  
 %% Implement basic arithmetic operations using primitive recursion 
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Trial 1: Defining Natural Numbers %%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% this section is from the tutorial, need to check more if we can apply it to our project
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Defining Gödel's System T %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%% We can define natural numbers in a standard inductive way:
-LF nat : type =
-  | zero : nat
-  | succ : nat → nat
+%% Defining types and terms in Gödel's System T
+i : type. 
+
+LF tp : type =
+  | nat : tp                     % natural number type
+  | arr : tp → tp → tp           % function A → B type
+
+  | ⊃ : tp → tp → tp
+  | ⊤ : tp
+  | ∧   : tp → tp → tp
+  | ∨   : tp → tp → tp
+  | ¬  : tp → tp
+  | ∀  : (i → tp) → tp    
+  | ∃  : (i → tp) → tp     
 ;
 
-rec add_nat : [⊢ nat] → [⊢ nat] → [⊢ nat] =
+--prefix ¬ 10.
+--infix ∧ 6 right.
+--infix ∨ 5 right.
+--infix ⊃ 4 right.
+--prefix ∀ 8.
+--prefix ∃ 8.
+
+LF tm : tp → type =
+
+  % natural numbers as a recursive type (with zero and a successor)
+  | zero : tm nat                                           
+  | succ : tm nat → tm nat      
+
+  % primitive recursion     
+  | prim_rec  : tm nat → tm A → tm (arr nat (arr A A)) → tm A
+  | lam  : (tm A → tm B) → tm (arr A B)     
+  | app  : tm (arr A B) → tm A → tm B    
+
+  % natural deduction calculus including existence and universal qualifiers
+  | ⊃I : (tm A → tm B) → tm (A ⊃ B)
+  | ⊃E : tm (A ⊃ B) → tm A → tm B      
+  | ¬I : ({p:tp} tm A → tm p) → tm (¬ A)    
+  | ¬E : tm (¬ A) → tm A → tm C      
+  | ∧I : tm A → tm B → tm  (A ∧ B)    
+  | ∧El : tm (A ∧ B) → tm A
+  | ∧Er : tm (A ∧ B) → tm B
+  | ∨Il : tm A → tm (A ∨ B)
+  | ∨Ir : tm B → tm (A ∨ B)
+  | ∨E  :  tm (A ∨ B) → (tm A → tm C) → (tm B → tm C) → tm C
+  | ⊤I : tm ⊤
+  | ∀I : ({a:i} tm (A a)) → tm (∀ (\x. A x))     
+  | ∀E : {T:i} tm (∀ A) → tm (A T) 
+  | ∃I : {T:i} tm (A T) → tm (∃ A)     
+  | ∃E : tm (∃ \x. A x) → ({a:i} tm (A a) → tm C) → tm C
+;
+
+%{ Defining addition via primitive recursion:
+
+This doesn't run. What we want is something like:
+
+add_nat(a,b)
+base case: a = 0, return b;
+a non-zero --> a= succ(m) so return add_nat(m,succ(b));
+
+rec add_nat : [⊢ tm nat] → [⊢ tm nat] → [⊢ tm nat] =
+  fn a b ⇒ case a of
+    | [⊢ zero] ⇒ b
+    | [⊢ succ M] ⇒
+    let [⊢ B] = b in
+    let [⊢ N] = [⊢ prim_rec M B ?] in
+    [⊢ succ N]
+;}%
+
+% Defining addition using Beluga recursion
+rec add_nat : [⊢ tm nat] → [⊢ tm nat] → [⊢ tm nat] =
 fn a b ⇒ case a of
   | [⊢ zero] ⇒ b
   | [⊢ succ M] ⇒
@@ -32,17 +103,4 @@ fn a b ⇒ case a of
 	[⊢ succ N]
 ;
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Trial 2: Defining Gödel's System T %%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%% Defining types and terms in Gödel's System T
-
-LF tp : type =
-  | nat : tp                % natural number type
-  | arr : tp -> tp -> tp    % function type
-
-LF tm : tp -> type =
-  | zero : tm nat
-  | succ : tm nat -> tm nat
-  % | rec : ? 
+rec qa : [ ⊢ tm (((A ⊃ B) ∧ (A ∨ C)) ⊃ (B ∨ C)) ] = [ ⊢ ⊃I \u. (∨E (∧Er u) (\a. (∨Il (⊃E (∧El u) a))) (\c. (∨Ir c)))];

@@ -4,9 +4,9 @@
 
 %% The goal of this tutorial is to study the extension of ordinary logic with natural numbers and recursion over natural numbers.
 
-%%%%%%%%%%%%%
-%%Questions%%
-%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%
+%% Questions %%
+%%%%%%%%%%%%%%%
 
 %% 1. Is there syntax to do this without any reference to rec because we want to make it clear we're not using Beluga Recursion -- see add_nat thats commented out
 %% 2. any advice for add_nat in general using prim_rec??

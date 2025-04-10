@@ -8,9 +8,9 @@
 %% Questions %%
 %%%%%%%%%%%%%%%
 
-%% 1. Is there syntax to do this without any reference to rec because we want to make it clear we're not using Beluga Recursion -- see add_nat thats commented out
-%% 2. any advice for add_nat in general using prim_rec??
-%% 3. can you check our natural deduction calculus implemenation within our system T tm?? not sure if this a valid way to inherit it, but the example works
+%% 1. Do we want to be logically oriented or programming oriented? -- naming would change
+%% 2. Do we want to keep zero/succ/prim_rec or go with natIl (zero) natIr (succ) and natE (prim_rec)
+%% 3. Do we leave as intrinsically typed formulation? From what I understand, if we left more ambiguous and instead had like a LF of_type then it would be extrinsic
 
 %%%%%%%%%%%%%%%%
 %% Objectives %%
@@ -29,8 +29,7 @@
 i : type. 
 
 LF tp : type =
-  | nat : tp                     % natural number type
-  | arr : tp → tp → tp           % function A → B type
+  | nat : tp          % natural number type
 
   | ⊃ : tp → tp → tp
   | ⊤ : tp
@@ -51,13 +50,11 @@ LF tp : type =
 LF tm : tp → type =
 
   % natural numbers as a recursive type (with zero and a successor)
-  | zero : tm nat                                           
-  | succ : tm nat → tm nat      
+  | zero : tm nat           % natIl                                  
+  | succ : tm nat → tm nat  % natIr    
 
   % primitive recursion     
-  | prim_rec  : tm nat → tm A → tm (arr nat (arr A A)) → tm A
-  | lam  : (tm A → tm B) → tm (arr A B)     
-  | app  : tm (arr A B) → tm A → tm B    
+  | prim_rec  : tm nat → tm A → tm (arr nat (arr A A)) → tm A % natE
 
   % natural deduction calculus including existence and universal qualifiers
   | ⊃I : (tm A → tm B) → tm (A ⊃ B)

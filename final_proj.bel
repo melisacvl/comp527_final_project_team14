@@ -8,9 +8,7 @@
 %% Questions %%
 %%%%%%%%%%%%%%%
 
-%% 1. Do we want to be logically oriented or programming oriented? -- naming would change
-%% 2. Do we want to keep zero/succ/prim_rec or go with natIl (zero) natIr (succ) and natE (prim_rec)
-%% 3. Do we leave as intrinsically typed formulation? From what I understand, if we left more ambiguous and instead had like a LF of_type then it would be extrinsic
+%% Do we leave as intrinsically typed formulation? From what I understand, if we left more ambiguous and instead had like a LF of_type then it would be extrinsic
 
 %%%%%%%%%%%%%%%%
 %% Objectives %%
@@ -50,11 +48,13 @@ LF tp : type =
 LF tm : tp → type =
 
   % natural numbers as a recursive type (with zero and a successor)
-  | zero : tm nat           % natIl                                  
-  | succ : tm nat → tm nat  % natIr    
+  | natIl : tm nat        % zero                                  
+  | natIr : tm nat → tm nat  % succ    
 
   % primitive recursion     
-  | prim_rec  : tm nat → tm A → tm (arr nat (arr A A)) → tm A % natE
+  %| natE : tm nat → tm A → tm (tm (nat ⊃ A ⊃ A)) → tm A
+  % | natE : tm O -> tm A -> ((tm A -> tm C) -> (tm B -> tm C)) -> tm B 
+  | natE : tm O -> tm A -> (tm O -> tm C) -> tm C
 
   % natural deduction calculus including existence and universal qualifiers
   | ⊃I : (tm A → tm B) → tm (A ⊃ B)
@@ -66,7 +66,7 @@ LF tm : tp → type =
   | ∧Er : tm (A ∧ B) → tm B
   | ∨Il : tm A → tm (A ∨ B)
   | ∨Ir : tm B → tm (A ∨ B)
-  | ∨E  :  tm (A ∨ B) → (tm A → tm C) → (tm B → tm C) → tm C
+  | ∨E  : tm (A ∨ B) → (tm A → tm C) → (tm B → tm C) → tm C
   | ⊤I : tm ⊤
   | ∀I : ({a:i} tm (A a)) → tm (∀ (\x. A x))     
   | ∀E : {T:i} tm (∀ A) → tm (A T) 
@@ -74,30 +74,34 @@ LF tm : tp → type =
   | ∃E : tm (∃ \x. A x) → ({a:i} tm (A a) → tm C) → tm C
 ;
 
-%{ Defining addition via primitive recursion:
+% Defining addition via primitive recursion:
 
-This doesn't run. What we want is something like:
+% This doesn't run. What we want is something like:
 
-add_nat(a,b)
-base case: a = 0, return b;
-a non-zero --> a= succ(m) so return add_nat(m,succ(b));
-
+%add_nat(a,b)
+%base case: a = 0, return b;
+%a non-zero --> a= succ(m) so return add_nat(m,succ(b));
+%{
 rec add_nat : [⊢ tm nat] → [⊢ tm nat] → [⊢ tm nat] =
   fn a b ⇒ case a of
-    | [⊢ zero] ⇒ b
-    | [⊢ succ M] ⇒
+    | [⊢ natIl] ⇒ b
+    | [⊢ natIr M] ⇒
     let [⊢ B] = b in
-    let [⊢ N] = [⊢ prim_rec M B ?] in
-    [⊢ succ N]
-;}%
-
+    let [⊢ N] = [⊢ natE M (B ?)] in
+    [⊢ natIr N]
+;
+}%
 % Defining addition using Beluga recursion
 rec add_nat : [⊢ tm nat] → [⊢ tm nat] → [⊢ tm nat] =
 fn a b ⇒ case a of
-  | [⊢ zero] ⇒ b
-  | [⊢ succ M] ⇒
+  | [⊢ natIl] ⇒ b
+  | [⊢ natIr M] ⇒
 	let [⊢ N] = add_nat [⊢ M] b in
-	[⊢ succ N]
+	[⊢ natIr N]
 ;
+
+rec infinity : [ ⊢ tm (nat ⊃ (nat ⊃ nat))] = [ ⊢ ⊃I \u. (⊃I \v. (natE u v natIr))];
+
+%rec multiply : [ ⊢ ?];
 
 rec qa : [ ⊢ tm (((A ⊃ B) ∧ (A ∨ C)) ⊃ (B ∨ C)) ] = [ ⊢ ⊃I \u. (∨E (∧Er u) (\a. (∨Il (⊃E (∧El u) a))) (\c. (∨Ir c)))];

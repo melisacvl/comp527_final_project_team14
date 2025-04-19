@@ -8,7 +8,9 @@
 %% Questions %%
 %%%%%%%%%%%%%%%
 
-%% Do we leave as intrinsically typed formulation? From what I understand, if we left more ambiguous and instead had like a LF of_type then it would be extrinsic
+%% is there a way to call add inside add otherwise how would we be able to make this recursive?
+%% is there a way to call add inside other proofs i.e. multiply?
+%% does our natE for primitive recursion seem reasonable? if not, do you have any advice? thanks!!!!!!
 
 %%%%%%%%%%%%%%%%
 %% Objectives %%
@@ -27,7 +29,7 @@
 i : type. 
 
 LF tp : type =
-  | nat : tp          % natural number type
+  | nat : tp        % natural number type
 
   | ⊃ : tp → tp → tp
   | ⊤ : tp
@@ -50,11 +52,10 @@ LF tm : tp → type =
   % natural numbers as a recursive type (with zero and a successor)
   | natIl : tm nat        % zero                                  
   | natIr : tm nat → tm nat  % succ    
-
   % primitive recursion     
-  %| natE : tm nat → tm A → tm (tm (nat ⊃ A ⊃ A)) → tm A
-  % | natE : tm O -> tm A -> ((tm A -> tm C) -> (tm B -> tm C)) -> tm B 
-  | natE : tm O -> tm A -> (tm O -> tm C) -> tm C
+  % should the elim rule start with tm nat or can we leave it as above? or does it not matter bc both type-checks with our example(s) below
+  | natE : tm O -> tm A -> (tm O -> tm C) -> tm A
+  %| natE : tm nat -> tm A -> (tm nat -> tm C) -> tm A
 
   % natural deduction calculus including existence and universal qualifiers
   | ⊃I : (tm A → tm B) → tm (A ⊃ B)
@@ -100,8 +101,10 @@ fn a b ⇒ case a of
 	[⊢ natIr N]
 ;
 
-rec infinity : [ ⊢ tm (nat ⊃ (nat ⊃ nat))] = [ ⊢ ⊃I \u. (⊃I \v. (natE u v natIr))];
+rec infinity : [ ⊢ tm (nat ⊃ nat)] = [ ⊢ ⊃I \u. (natE u u natIr)];
 
-%rec multiply : [ ⊢ ?];
+rec add : [ ⊢ tm ((nat ∧ nat) ⊃ nat)] = [ ⊢ ⊃I \a. (natE (∧El a) (∧Er a) (\d. ∧I d (∧Er a)))];
+
+rec multiply : [ ⊢ tm ((nat ∧ nat) ⊃ nat)] = [ ⊢ ?];
 
 rec qa : [ ⊢ tm (((A ⊃ B) ∧ (A ∨ C)) ⊃ (B ∨ C)) ] = [ ⊢ ⊃I \u. (∨E (∧Er u) (\a. (∨Il (⊃E (∧El u) a))) (\c. (∨Ir c)))];

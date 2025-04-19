@@ -77,30 +77,6 @@ LF tm : tp → type =
 
 % Defining addition via primitive recursion:
 
-% This doesn't run. What we want is something like:
-
-%add_nat(a,b)
-%base case: a = 0, return b;
-%a non-zero --> a= succ(m) so return add_nat(m,succ(b));
-%{
-rec add_nat : [⊢ tm nat] → [⊢ tm nat] → [⊢ tm nat] =
-  fn a b ⇒ case a of
-    | [⊢ natIl] ⇒ b
-    | [⊢ natIr M] ⇒
-    let [⊢ B] = b in
-    let [⊢ N] = [⊢ natE M (B ?)] in
-    [⊢ natIr N]
-;
-}%
-% Defining addition using Beluga recursion
-rec add_nat : [⊢ tm nat] → [⊢ tm nat] → [⊢ tm nat] =
-fn a b ⇒ case a of
-  | [⊢ natIl] ⇒ b
-  | [⊢ natIr M] ⇒
-	let [⊢ N] = add_nat [⊢ M] b in
-	[⊢ natIr N]
-;
-
 rec infinity : [ ⊢ tm (nat ⊃ nat)] = [ ⊢ ⊃I \u. (natE u u natIr)];
 
 rec add : [ ⊢ tm ((nat ∧ nat) ⊃ nat)] = [ ⊢ ⊃I \a. (natE (∧El a) (∧Er a) (\d. ∧I d (∧Er a)))];

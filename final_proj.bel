@@ -53,9 +53,10 @@ LF tm : tp → type =
   | natIl : tm nat        % zero                                  
   | natIr : tm nat → tm nat  % succ    
   % primitive recursion     
-  % should the elim rule start with tm nat or can we leave it as above? or does it not matter bc both type-checks with our example(s) below
+  % should the elim rule start with tm nat or can we leave it as the first? 
   | natE : tm O -> tm A -> (tm O -> tm C) -> tm A
-  %| natE : tm nat -> tm A -> (tm nat -> tm C) -> tm A
+  % UPDATE: we think this is more accurate actually, but our proofs only type check for the above currently, need to fix
+  %| natE : tm nat → tm A → (tm nat → tm A → tm A) → tm A
 
   % natural deduction calculus including existence and universal qualifiers
   | ⊃I : (tm A → tm B) → tm (A ⊃ B)
@@ -77,10 +78,14 @@ LF tm : tp → type =
 
 % Defining addition via primitive recursion:
 
-rec infinity : [ ⊢ tm (nat ⊃ nat)] = [ ⊢ ⊃I \u. (natE u u natIr)];
+ rec infinity : [ ⊢ tm (nat ⊃ nat)] = [ ⊢ ⊃I \u. (natE u u natIr)];
 
-rec add : [ ⊢ tm ((nat ∧ nat) ⊃ nat)] = [ ⊢ ⊃I \a. (natE (∧El a) (∧Er a) (\d. ∧I d (∧Er a)))];
+ rec add : [ ⊢ tm ((nat ∧ nat) ⊃ nat)] = [ ⊢ ⊃I \a. (natE (∧El a) (∧Er a) (\d. (∧I d (∧Er a))))];
 
-rec multiply : [ ⊢ tm ((nat ∧ nat) ⊃ nat)] = [ ⊢ ?];
+% rec multiply : [ ⊢ tm ((nat ∧ nat) ⊃ nat)] = [ ⊢ ?];
+
+% pred, subtract
+
+% proofs from the paper
 
 rec qa : [ ⊢ tm (((A ⊃ B) ∧ (A ∨ C)) ⊃ (B ∨ C)) ] = [ ⊢ ⊃I \u. (∨E (∧Er u) (\a. (∨Il (⊃E (∧El u) a))) (\c. (∨Ir c)))];

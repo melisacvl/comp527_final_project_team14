@@ -54,9 +54,9 @@ LF tm : tp → type =
   | natIr : tm nat → tm nat  % succ    
   % primitive recursion     
   % should the elim rule start with tm nat or can we leave it as the first? 
-  | natE : tm O -> tm A -> (tm O -> tm C) -> tm A
+  %| natE : tm O -> tm A -> (tm O -> tm C) -> tm A
   % UPDATE: we think this is more accurate actually, but our proofs only type check for the above currently, need to fix
-  %| natE : tm nat → tm A → (tm nat → tm A → tm A) → tm A
+  | natE : tm nat → tm A → (tm nat → tm A → tm A) → tm A
 
   % natural deduction calculus including existence and universal qualifiers
   | ⊃I : (tm A → tm B) → tm (A ⊃ B)
@@ -89,3 +89,11 @@ LF tm : tp → type =
 % proofs from the paper
 
 rec qa : [ ⊢ tm (((A ⊃ B) ∧ (A ∨ C)) ⊃ (B ∨ C)) ] = [ ⊢ ⊃I \u. (∨E (∧Er u) (\a. (∨Il (⊃E (∧El u) a))) (\c. (∨Ir c)))];
+
+rec add : [ ⊢ tm ((nat ∧ nat) ⊃ nat) ] =
+  [ ⊢ ⊃I \u. 
+      natE (∧El u) 
+           (∧Er u) 
+           (\v. \r. natIr r)
+  ];
+

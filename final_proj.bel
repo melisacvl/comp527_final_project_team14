@@ -21,6 +21,8 @@
 %% Implement primitive recursion in the same way Gödel did  
 %% Implement basic arithmetic operations using primitive recursion 
 
+%% IF WE HAVE TIME: weak normalization proof???
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Defining Gödel's System T %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -76,24 +78,110 @@ LF tm : tp → type =
   | ∃E : tm (∃ \x. A x) → ({a:i} tm (A a) → tm C) → tm C
 ;
 
-% Defining addition via primitive recursion:
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Verification of Natural Deduction %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- rec infinity : [ ⊢ tm (nat ⊃ nat)] = [ ⊢ ⊃I \u. (natE u u natIr)];
+% The following proofs are to verify that we have correctly inherited natural deducition calculus, 
+% including existence and universal qualifiers.
 
- rec add : [ ⊢ tm ((nat ∧ nat) ⊃ nat)] = [ ⊢ ⊃I \a. (natE (∧El a) (∧Er a) (\d. (∧I d (∧Er a))))];
+rec nd_a : [ ⊢ tm (((A ⊃ B) ∧ (A ∨ C)) ⊃ (B ∨ C)) ] = [ ⊢ ⊃I \u. (∨E (∧Er u) (\a. (∨Il (⊃E (∧El u) a))) (\c. (∨Ir c)))];
+rec nd_b : [ ⊢ tm (∀ \x. (∃ \y.  P[x] ⊃ P[y]))] =[ ⊢ ∀I \a. ∃I a (⊃I \u. u)];
 
-% rec multiply : [ ⊢ tm ((nat ∧ nat) ⊃ nat)] = [ ⊢ ?];
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Basic Arithmetic Operations %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% pred, subtract
+%%%% Predecesor %%%%
+%{ The definition of predecesor is as follows:
+
+pred = λ(n : nat). rec(n; z; x.y. x)
+
+where:
+- n is the number we recurse over
+- rec(n; z; x.y. x) is the recursive definition which states:
+  - If n = 0, return 0
+  - If n = successor of some number x and y = result of recursive call on x, then return x
+
+This means:
+pred(0) = 0     
+pred(s(k)) = k
+
+Therefore, in our following proof:
+
+We have a term of the following type: (nat ⊃ nat). 
+This is because we want to the predecesor of natural number n, which is also of type natural number.
+
+In our proof, n is our natural number input, x is the predecesor of n and r is the result of the recursion on x.
+We output x, which we had already established is the predecesor of n.
+
+}%
+
+rec pred : [ ⊢ tm (nat ⊃ nat)] = [ ⊢ ⊃I \n. natE n natIl (\x. \r. x)];
+
+%%%% Addition %%%%
+%{ The definition of addition is as follows: 
+
+add = λ(m : nat). λ(n : nat). rec(m; n; x.y. s(y))
+
+where:
+- m is the number we recurse over
+- n is the number we add to
+- the recursive definition rec(m; n; x.y. s(y)), which states:
+  - If m = 0, return n
+  - If m = successor of some nat x, let y = result of recursive call on x and return successor(y)
+
+This will give us:
+add(0, n) = n
+add(s(k), n) = s(add(k, n))
+
+Therefore, for our proof:
+
+We have a term of the following type: ((nat ∧ nat) ⊃ nat). 
+This is because we want to add the natural numbers m and n.   
+Then, we say that addition on the pair (m, n) implies the existence of another natural number, namely m+n. 
+
+In our proof, a is the pair (m, n), x is the predecesor of m and r is the result of the recursion x+n.
+We finally output the successor of r, which equivalently gives x+n+1 = (x+1)+n = m+n. 
+
+}%
+
+rec add : [ ⊢ tm ((nat ∧ nat) ⊃ nat)] = [ ⊢ ⊃I \a. (natE (∧El a) (∧Er a) (\x. \r. (natIr r)))];
+
+%%%% Multiplication %%%%
+%{ The definition of multiplication is as follows:
+
+multiply = λ(m : nat). λ(n : nat). rec(m; z; x.y. add(n, y))
+
+where:
+- m is the number we recurse over, i.e. add n m times
+- n is the number we add m times
+- the recusive definition rec(m; z; x.y. add(n, y)), which states:
+  - If m = 0, return 0
+  - If m = successor of some nat x, y = the recursive result of multiply(x, n), then return add(n, y)
+
+This gives us:
+multiply(0, n) = 0
+multiply(s(k), n) = add(n, mult(k, n))
+
+}%
+
+rec multiply : [ ⊢ tm ((nat ∧ nat) ⊃ nat)] = [ ⊢ ?];
+
+%%%% Subtraction %%%%
+%{ The definition of subtraction is as follows:
+
+subtract = λ(m : nat). λ(n : nat) rec(n; m; x.y. pred(x))
+
+where:
+- m is 
+- n is 
+- rec(n; m; x.y. pred(x)) is the recusive definition, which states:
+  - If m = 0, return n
+  - If 
+
+}%
+
+%%%% Exponentiation %%%%
 
 % proofs from the paper
-
-rec qa : [ ⊢ tm (((A ⊃ B) ∧ (A ∨ C)) ⊃ (B ∨ C)) ] = [ ⊢ ⊃I \u. (∨E (∧Er u) (\a. (∨Il (⊃E (∧El u) a))) (\c. (∨Ir c)))];
-
-rec add : [ ⊢ tm ((nat ∧ nat) ⊃ nat) ] =
-  [ ⊢ ⊃I \u. 
-      natE (∧El u) 
-           (∧Er u) 
-           (\v. \r. natIr r)
-  ];
-

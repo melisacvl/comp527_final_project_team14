@@ -8,7 +8,7 @@
 %% Objectives %%
 %%%%%%%%%%%%%%%%
 
-%% Inherit natural deduction calculus including existence and universal qualifiers
+%% Inherit natural deduction calculus 
 %% Implement the natural numbers (with zero and a successor)
 %% Implement primitive recursion in the same way Gödel did  
 %% Implement basic arithmetic operations using primitive recursion 
@@ -25,58 +25,53 @@ i : type.
 LF tp : type =
   | nat : tp        % natural number type
 
-  | ⊃ : tp → tp → tp
+  | arr : tp → tp → tp
   | ⊤ : tp
   | ∧   : tp → tp → tp
-  | ∨   : tp → tp → tp
-  | ¬  : tp → tp
-  | ∀  : (i → tp) → tp    
-  | ∃  : (i → tp) → tp     
+  | ∨   : tp → tp → tp 
+  | not  : tp → tp   
 ;
 
---prefix ¬ 10.
+--prefix not 10.
 --infix ∧ 6 right.
 --infix ∨ 5 right.
---infix ⊃ 4 right.
---prefix ∀ 8.
---prefix ∃ 8.
+--infix arr 4 right.
 
 LF tm : tp → type =
 
   % natural numbers as a recursive type (with zero and a successor)
-  | natIl : tm nat        % zero                                  
-  | natIr : tm nat → tm nat  % succ    
+  | zero : tm nat                              
+  | succ : tm nat → tm nat  
 
   % primitive recursion     
-  | natE : tm nat → tm A → (tm nat → tm A → tm A) → tm A
+  | prim_rec : tm nat → tm A → (tm nat → tm A → tm A) → tm A
 
-  % natural deduction calculus including existence and universal qualifiers
-  | ⊃I : (tm A → tm B) → tm (A ⊃ B)
-  | ⊃E : tm (A ⊃ B) → tm A → tm B      
-  | ¬I : ({p:tp} tm A → tm p) → tm (¬ A)    
-  | ¬E : tm (¬ A) → tm A → tm C      
-  | ∧I : tm A → tm B → tm  (A ∧ B)    
-  | ∧El : tm (A ∧ B) → tm A
-  | ∧Er : tm (A ∧ B) → tm B
-  | ∨Il : tm A → tm (A ∨ B)
-  | ∨Ir : tm B → tm (A ∨ B)
-  | ∨E  : tm (A ∨ B) → (tm A → tm C) → (tm B → tm C) → tm C
-  | ⊤I : tm ⊤
-  | ∀I : ({a:i} tm (A a)) → tm (∀ (\x. A x))     
-  | ∀E : {T:i} tm (∀ A) → tm (A T) 
-  | ∃I : {T:i} tm (A T) → tm (∃ A)     
-  | ∃E : tm (∃ \x. A x) → ({a:i} tm (A a) → tm C) → tm C
+  % natural deduction calculus, written in programming jargon
+  | lam : (tm A → tm B) → tm (A arr B)
+  | app : tm (A arr B) → tm A → tm B       
+
+  | pair : tm A → tm B → tm  (A ∧ B)    
+  | fst : tm (A ∧ B) → tm A
+  | snd : tm (A ∧ B) → tm B
+
+  | inl : tm A → tm (A ∨ B)
+  | inr : tm B → tm (A ∨ B)
+  | case_of : tm (A ∨ B) → (tm A → tm C) → (tm B → tm C) → tm C
+
+  | unit : tm ⊤
+
+  | notI : ({p:tp} tm A → tm p) → tm (not A)    
+  | notE : tm (not A) → tm A → tm C     
 ;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Verification of Natural Deduction %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% The following proofs are to verify that we have correctly inherited natural deducition calculus, 
-% including existence and universal qualifiers.
+% The following proofs are to verify that we have correctly inherited natural deducition calculus
 
-rec nd_a : [ ⊢ tm (((A ⊃ B) ∧ (A ∨ C)) ⊃ (B ∨ C)) ] = [ ⊢ ⊃I \u. (∨E (∧Er u) (\a. (∨Il (⊃E (∧El u) a))) (\c. (∨Ir c)))];
-rec nd_b : [ ⊢ tm (∀ \x. (∃ \y.  P[x] ⊃ P[y]))] =[ ⊢ ∀I \a. ∃I a (⊃I \u. u)];
+rec nd_a : [ ⊢ tm (((A arr B) ∧ (A ∨ C)) arr (B ∨ C)) ] = [ ⊢ lam \u. (case_of (snd u) (\a. (inl (app (fst u) a))) (\c. (inr c)))];
+rec nd_b : [ ⊢ tm ((A ∧ not B) arr not(A arr B))] = [ ⊢ lam \u. (notI \p. \v. (notE (snd u)) (app v (fst u)))];
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Basic Arithmetic Operations %%
@@ -99,7 +94,7 @@ pred(succ(k)) = k
 
 Therefore, in our following proof:
 
-We have a term of the following type: (nat ⊃ nat). 
+We have a term of the following type: (nat arr nat). 
 This is because we want to the predecesor of natural number n, which is also of type natural number.
 
 In our proof, n is our natural number input, x is the predecesor of n and r is the result of the recursion on x.
@@ -107,7 +102,7 @@ We output x, which we had already established is the predecesor of n.
 
 }%
 
-rec pred : [ ⊢ tm (nat ⊃ nat)] = [ ⊢ ⊃I \n. natE n natIl (\x. \r. x)];
+rec pred : [ ⊢ tm (nat arr nat)] = [ ⊢ lam \n. prim_rec n zero (\x. \r. x)];
 
 %%%% Addition %%%%
 %{ The definition of addition is as follows: 
@@ -127,7 +122,7 @@ add(succ(k), n) = s(add(k, n))
 
 Therefore, for our proof:
 
-We have a term of the following type: ((nat ∧ nat) ⊃ nat). 
+We have a term of the following type: ((nat ∧ nat) arr nat). 
 This is because we want to add the natural numbers m and n.   
 Then, we say that addition on the pair (m, n) implies the existence of another natural number, namely m+n. 
 
@@ -136,7 +131,7 @@ We finally output the successor of r, which equivalently gives x+n+1 = (x+1)+n =
 
 }%
 
-rec add : [ ⊢ tm ((nat ∧ nat) ⊃ nat)] = [ ⊢ ⊃I \a. (natE (∧El a) (∧Er a) (\x. \r. (natIr r)))];
+rec add : [ ⊢ tm ((nat ∧ nat) arr nat)] = [ ⊢ lam \a. (prim_rec (fst a) (snd a) (\x. \r. (succ r)))];
 
 %%%% Multiplication %%%%
 %{ The definition of multiplication is as follows:
@@ -156,7 +151,7 @@ multiply(succ(k), n) = add(n, multiply(k, n))
 
 Therefore, in our proof:
 
-We again have a term of type: ((nat ∧ nat) ⊃ nat). 
+We again have a term of type: ((nat ∧ nat) arr nat). 
 This is because we want to multiply the natural numbers m and n.   
 Then, the multiplication on the pair (m, n) implies the existence of another natural number, namely m*n. 
 
@@ -165,7 +160,7 @@ As we cannot call add directly, we use its definition inline with a second primi
 
 }%
 
-rec multiply : [ ⊢ tm ((nat ∧ nat) ⊃ nat) ] = [ ⊢ ⊃I \a. natE (∧El a) natIl (\x. \r. natE r (∧Er a) (\x'. \r'. natIr r'))];
+rec multiply : [ ⊢ tm ((nat ∧ nat) arr nat) ] = [ ⊢ lam \a. prim_rec (fst a) zero (\x. \r. prim_rec r (snd a) (\x'. \r'. succ r'))];
 
 %%%% Subtraction %%%%
 %{ The definition of subtraction is as follows:
@@ -177,24 +172,24 @@ where:
 - n is the number we recurse over, which is the number we subtract
 - rec(n; m; x.y. pred(x)) is the recusive definition, which states:
   - If n = 0, return m
-  - If n = successor of some nat x, y = the result of recursive call subtract(m, x), then return pred(x) %%% I THINK THIS SHOULD BE Y PROBABLY A TYPO IN THE FORMLUATION
+  - If n = successor of some nat x, y = the result of recursive call subtract(m, x), then return pred(y) 
 
 This gives us:
 subtract(m, 0) = m
-subtract(m, succ(k)) = pred(subtract(m, k)) % CUS IT DOESNT MAKE SENSE TO HAVE PRED(K)
+subtract(m, succ(k)) = pred(subtract(m, k)) 
 
 Note that subtracting a number greater than m will result in 0, since pred(0) = 0 and negative numbers do not exist in System T (since we only deal with natural numbers).
 
 Thus, in our proof:
 
-We again have a term of type: ((nat ∧ nat) ⊃ nat) since the subtractaction of n from m implies the natural number m-n exists. 
+We again have a term of type: ((nat ∧ nat) arr nat) since the subtractaction of n from m implies the natural number m-n exists. 
 
 In our proof, a is the pair (m, n), x is the predecesor of n, r is the result of the recursion m-x.
 As we cannot call pred directly, we use its definition inline with a second primitive recursion call to do: (m - x) - 1 = m - (x+1) = m - n.
 
 }%
 
-rec subtract : [ ⊢ tm ((nat ∧ nat) ⊃ nat)] = [ ⊢ ⊃I \a. natE (∧Er a) (∧El a) (\x. \r. natE r natIl (\x'. \r'. x'))];
+rec subtract : [ ⊢ tm ((nat ∧ nat) arr nat)] = [ ⊢ lam \a. prim_rec (snd a) (fst a) (\x. \r. prim_rec r zero (\x'. \r'. x'))];
 
 %%%% Exponentiation %%%%
 %{ The definition of exponentiation is as follows:
@@ -214,7 +209,7 @@ exp(m, succ(k)) = multiply(m, exp(m, k))
 
 Therefore, in our proof:
 
-We again have a term of type: ((nat ∧ nat) ⊃ nat) since exponentiation on natural numbers m and n implies the natural number m^n exists. 
+We again have a term of type: ((nat ∧ nat) arr nat) since exponentiation on natural numbers m and n implies the natural number m^n exists. 
 
 In our proof, a is the pair (m, n), x is the predecesor of n, r is the result of the recursion m-x.
 As we cannot call multiply directly, we use its definition inline with a second primitive recursion call 
@@ -223,7 +218,7 @@ m * (m^k) = m^(k+1) = m^n.
 
 }%
 
-rec exp : [ ⊢ tm ((nat ∧ nat) ⊃ nat) ] = [ ⊢ ⊃I \a. natE (∧Er a) (natIr natIl) (\x. \r. natE (∧El a) natIl (\x'. \r'. natE r x' (\x''. \r''. natIr r'')))];
+rec exp : [ ⊢ tm ((nat ∧ nat) arr nat) ] = [ ⊢ lam \a. prim_rec (snd a) (succ zero) (\x. \r. prim_rec (fst a) zero (\x'. \r'. prim_rec r x' (\x''. \r''. succ r'')))];
 
 %%%%%%%%%%%%%%%%%%%%%%%%
 %% Weak Normalization %%
@@ -234,8 +229,8 @@ rec exp : [ ⊢ tm ((nat ∧ nat) ⊃ nat) ] = [ ⊢ ⊃I \a. natE (∧Er a) (na
 % We do not add the elimination rule, i.e. the primitive recursion since it is not in Normal form as it still requires a reduction
 
 inductive Normal : [⊢ tm A] → ctype =
-  | natNorml : Normal [⊢ natIl]
-  | natNormr : Normal [⊢ M] → Normal [⊢ natIr M]
+  | natNorml : Normal [⊢ zero]
+  | natNormr : Normal [⊢ M] → Normal [⊢ succ M]
 ;
 
 % Next, we define how terms compute using Eval, which is our definition of what "reducing to" means
@@ -247,16 +242,27 @@ inductive Normal : [⊢ tm A] → ctype =
 We need to:
 
 - be done if no more to evaluate i.e. in normal form
-- evaluate if natE gets base case
-- evaluate if natE gets the step case
+- evaluate if prim_rec gets the base case
+- evaluate if prim_rec gets the step case
 
 }%
 
 inductive Eval : [⊢ tm A] → [⊢ tm A] → ctype = 
   | doneEval : Normal [⊢ M] → Eval [⊢ M] [⊢ M]
-  | natEvalBase : Eval [⊢ M] [⊢ natIl] → Eval [⊢ natE M M1 M2] [⊢ M1]     % to match: rec(0; base; step) = base
-  | natEvalStep :       % to match: rec(succ N; base; step) = step(N, rec(N; base; step))
+  | prim_rec_evalBase : Eval [⊢ M] [⊢ zero] → Eval [⊢ prim_rec M M1 (\x. \y. M2)] [⊢ M1]  % to match: rec(0; base; step) = base
+  %| prim_rec_evalStep : Eval [⊢ M] [⊢ succ N] → Eval [⊢ prim_rec N M1 (\x. \y. M2)] [⊢ R] → Eval [⊢ N R M2] [⊢ V]        
+
+%{
+
+Eval step:
+
+if eval M to succ N and eval prim_rec N M1 M2 to the result recursion R and eval step M2 using N and R to final form V 
+
+then eval prim_rec M M1 M2 will evaluate to V
+
+}%
+    % →                           
+    %Eval [⊢ prim_rec M M1 M2] [⊢ V]                   
+  
+      % to match: rec(succ N; base; step) = step(N, rec(N; base; step))
 ;
-
-
-

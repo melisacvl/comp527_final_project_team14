@@ -4,14 +4,6 @@
 
 %% The goal of this tutorial is to study the extension of ordinary logic with natural numbers and recursion over natural numbers.
 
-%%%%%%%%%%%%%%%
-%% Questions %%
-%%%%%%%%%%%%%%%
-
-%% is there a way to call add inside add otherwise how would we be able to make this recursive?
-%% is there a way to call add inside other proofs i.e. multiply?
-%% does our natE for primitive recursion seem reasonable? if not, do you have any advice? thanks!!!!!!
-
 %%%%%%%%%%%%%%%%
 %% Objectives %%
 %%%%%%%%%%%%%%%%
@@ -54,10 +46,8 @@ LF tm : tp → type =
   % natural numbers as a recursive type (with zero and a successor)
   | natIl : tm nat        % zero                                  
   | natIr : tm nat → tm nat  % succ    
+
   % primitive recursion     
-  % should the elim rule start with tm nat or can we leave it as the first? 
-  %| natE : tm O -> tm A -> (tm O -> tm C) -> tm A
-  % UPDATE: we think this is more accurate actually, but our proofs only type check for the above currently, need to fix
   | natE : tm nat → tm A → (tm nat → tm A → tm A) → tm A
 
   % natural deduction calculus including existence and universal qualifiers
@@ -104,8 +94,8 @@ where:
   - If n = successor of some number x and y = result of recursive call on x, then return x
 
 This means:
-pred(0) = 0     
-pred(s(k)) = k
+pred(0) = 0         % since negative numbers do not exist in System T
+pred(succ(k)) = k
 
 Therefore, in our following proof:
 
@@ -133,7 +123,7 @@ where:
 
 This will give us:
 add(0, n) = n
-add(s(k), n) = s(add(k, n))
+add(succ(k), n) = s(add(k, n))
 
 Therefore, for our proof:
 
@@ -162,11 +152,20 @@ where:
 
 This gives us:
 multiply(0, n) = 0
-multiply(s(k), n) = add(n, mult(k, n))
+multiply(succ(k), n) = add(n, multiply(k, n))
+
+Therefore, in our proof:
+
+We again have a term of type: ((nat ∧ nat) ⊃ nat). 
+This is because we want to multiply the natural numbers m and n.   
+Then, the multiplication on the pair (m, n) implies the existence of another natural number, namely m*n. 
+
+In our proof, a is the pair (m, n), x is the predecesor of m, r is the result of the recursion x*n.
+As we cannot call add directly, we use its definition inline with a second primitive recursion call to do: n + x*n = n + (m-1)*n = m*n.
 
 }%
 
-rec multiply : [ ⊢ tm ((nat ∧ nat) ⊃ nat)] = [ ⊢ ?];
+rec multiply : [ ⊢ tm ((nat ∧ nat) ⊃ nat) ] = [ ⊢ ⊃I \a. natE (∧El a) natIl (\x. \r. natE r (∧Er a) (\x'. \r'. natIr r'))];
 
 %%%% Subtraction %%%%
 %{ The definition of subtraction is as follows:
@@ -174,14 +173,90 @@ rec multiply : [ ⊢ tm ((nat ∧ nat) ⊃ nat)] = [ ⊢ ?];
 subtract = λ(m : nat). λ(n : nat) rec(n; m; x.y. pred(x))
 
 where:
-- m is 
-- n is 
+- m is the number we subtract from
+- n is the number we recurse over, which is the number we subtract
 - rec(n; m; x.y. pred(x)) is the recusive definition, which states:
-  - If m = 0, return n
-  - If 
+  - If n = 0, return m
+  - If n = successor of some nat x, y = the result of recursive call subtract(m, x), then return pred(x) %%% I THINK THIS SHOULD BE Y PROBABLY A TYPO IN THE FORMLUATION
+
+This gives us:
+subtract(m, 0) = m
+subtract(m, succ(k)) = pred(subtract(m, k)) % CUS IT DOESNT MAKE SENSE TO HAVE PRED(K)
+
+Note that subtracting a number greater than m will result in 0, since pred(0) = 0 and negative numbers do not exist in System T (since we only deal with natural numbers).
+
+Thus, in our proof:
+
+We again have a term of type: ((nat ∧ nat) ⊃ nat) since the subtractaction of n from m implies the natural number m-n exists. 
+
+In our proof, a is the pair (m, n), x is the predecesor of n, r is the result of the recursion m-x.
+As we cannot call pred directly, we use its definition inline with a second primitive recursion call to do: (m - x) - 1 = m - (x+1) = m - n.
 
 }%
 
-%%%% Exponentiation %%%%
+rec subtract : [ ⊢ tm ((nat ∧ nat) ⊃ nat)] = [ ⊢ ⊃I \a. natE (∧Er a) (∧El a) (\x. \r. natE r natIl (\x'. \r'. x'))];
 
-% proofs from the paper
+%%%% Exponentiation %%%%
+%{ The definition of exponentiation is as follows:
+
+exp = λ(m : nat). λ(n : nat). rec(n; s(z); x y. multiply(m, y))
+
+where:
+- m is the base of the exponentiation
+- n is the number we recurse over, which is the exponent
+- rec(n; s(z); x y. multiply(m, y)) is the recursive definition which states:
+  - If n = 0, return 1 i.e. succ(zero)
+  - If n = successor of some nat x, y = the result of the recursion exp(m, x) then return multiply(m, y)
+
+This gives us:
+exp(m, 0) = 1
+exp(m, succ(k)) = multiply(m, exp(m, k))
+
+Therefore, in our proof:
+
+We again have a term of type: ((nat ∧ nat) ⊃ nat) since exponentiation on natural numbers m and n implies the natural number m^n exists. 
+
+In our proof, a is the pair (m, n), x is the predecesor of n, r is the result of the recursion m-x.
+As we cannot call multiply directly, we use its definition inline with a second primitive recursion call 
+(which uses a third primitive recursion call for add) to do:
+m * (m^k) = m^(k+1) = m^n.
+
+}%
+
+rec exp : [ ⊢ tm ((nat ∧ nat) ⊃ nat) ] = [ ⊢ ⊃I \a. natE (∧Er a) (natIr natIl) (\x. \r. natE (∧El a) natIl (\x'. \r'. natE r x' (\x''. \r''. natIr r'')))];
+
+%%%%%%%%%%%%%%%%%%%%%%%%
+%% Weak Normalization %%
+%%%%%%%%%%%%%%%%%%%%%%%%
+
+% First, we need to define what it means to be in Normal form in System T, i.e. a fully reduced term
+% We add the introduction rules for natural numbers zero and successor since these are final
+% We do not add the elimination rule, i.e. the primitive recursion since it is not in Normal form as it still requires a reduction
+
+inductive Normal : [⊢ tm A] → ctype =
+  | natNorml : Normal [⊢ natIl]
+  | natNormr : Normal [⊢ M] → Normal [⊢ natIr M]
+;
+
+% Next, we define how terms compute using Eval, which is our definition of what "reducing to" means
+% This is basically our reduction relation and defines how we do the evaluation e → e'
+% Then, Eval(M, N) means "term M evaluates to result N"
+
+%{
+
+We need to:
+
+- be done if no more to evaluate i.e. in normal form
+- evaluate if natE gets base case
+- evaluate if natE gets the step case
+
+}%
+
+inductive Eval : [⊢ tm A] → [⊢ tm A] → ctype = 
+  | doneEval : Normal [⊢ M] → Eval [⊢ M] [⊢ M]
+  | natEvalBase : Eval [⊢ M] [⊢ natIl] → Eval [⊢ natE M M1 M2] [⊢ M1]     % to match: rec(0; base; step) = base
+  | natEvalStep :       % to match: rec(succ N; base; step) = step(N, rec(N; base; step))
+;
+
+
+

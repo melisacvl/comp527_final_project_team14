@@ -8,11 +8,16 @@ Gödel's System T is an extension of the Natural Deduction Calculus (ND) which i
 DESCRIPTION OF CONTENT
 
 References:
+
 [1] nLab authors. Peano arithmetic. https://ncatlab.org/nlab/show/Peano+arithmetic, April 2025. Revision 17.
+
 [2] Von Kurt Gödel. Über eine bisher noch nicht benÜtzte erweiterung des finiten standpunktes. Dialectica, 12:280–287, 12
 1958.
+
 [3] Ana Bove and Peter Dybjer. Dependent Types at Work, pages 57–99. Springer Berlin Heidelberg, Berlin, Heidelberg,
 2009.
+
 [4] Ulrich Berger. Continuous semantics for strong normalization. In S. Barry Cooper, Benedikt Löwe, and Leen Torenvliet,
 editors, New Computational Paradigms, pages 23–34, Berlin, Heidelberg, 2005. Springer Berlin Heidelberg.
+
 [5] The Stacks project authors. The stacks project. https://stacks.math.columbia.edu, 2025.

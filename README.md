@@ -12,7 +12,7 @@ Although System T was first introduced in 1958 [2], the logic has maintained rel
 - The PDF titled COMP 527 Consent To Post on Ed includes our consent to post as well as each members contributions to the project. 
 
 
-References:
+### References:
 
 [1] nLab authors. Peano arithmetic. https://ncatlab.org/nlab/show/Peano+arithmetic, April 2025. Revision 17.
 

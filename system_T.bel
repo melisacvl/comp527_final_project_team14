@@ -250,7 +250,7 @@ We need to:
 inductive Eval : [⊢ tm A] → [⊢ tm A] → ctype = 
   | doneEval : Normal [⊢ M] → Eval [⊢ M] [⊢ M]
   %%% Questions %%%
-  % without the assumptions x and y, we get that M2 is a meta-variable, 
+  % without the assumptions x and y, we get that M2 is a meta-variable, but why? why does it work like this and is it necessarily correct that it works?
   | prim_recEvalBase : Eval [⊢ M] [⊢ zero] → Eval [⊢ prim_rec M M1 (\x. \y. M2)] [⊢ M1]  % to match: rec(0; base; step) = base
 
   %| prim_recEvalStep : Eval [⊢ M] [⊢ succ N] → Eval [⊢ prim_rec N M1 (\x. \y. M2)] [⊢ R] → Eval [⊢ app M2 (N R)] [⊢ V]

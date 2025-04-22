@@ -249,20 +249,32 @@ We need to:
 
 inductive Eval : [⊢ tm A] → [⊢ tm A] → ctype = 
   | doneEval : Normal [⊢ M] → Eval [⊢ M] [⊢ M]
-  | prim_rec_evalBase : Eval [⊢ M] [⊢ zero] → Eval [⊢ prim_rec M M1 (\x. \y. M2)] [⊢ M1]  % to match: rec(0; base; step) = base
-  %| prim_rec_evalStep : Eval [⊢ M] [⊢ succ N] → Eval [⊢ prim_rec N M1 (\x. \y. M2)] [⊢ R] → Eval [⊢ N R M2] [⊢ V]        
+  %%% Questions %%%
+  % without the assumptions x and y, we get that M2 is a meta-variable, 
+  | prim_recEvalBase : Eval [⊢ M] [⊢ zero] → Eval [⊢ prim_rec M M1 (\x. \y. M2)] [⊢ M1]  % to match: rec(0; base; step) = base
 
+  %| prim_recEvalStep : Eval [⊢ M] [⊢ succ N] → Eval [⊢ prim_rec N M1 (\x. \y. M2)] [⊢ R] → Eval [⊢ app M2 (N R)] [⊢ V]
+ %→ %Eval [⊢ prim_rec M M1 M2] [⊢ V]                   
+  %| appEval : 
+;
 %{
 
-Eval step:
+to match: rec(succ N; base; step) = step(N, rec(N; base; step))
+what we want the Eval step to basically say:
 
 if eval M to succ N and eval prim_rec N M1 M2 to the result recursion R and eval step M2 using N and R to final form V 
 
 then eval prim_rec M M1 M2 will evaluate to V
 
 }%
-    % →                           
-    %Eval [⊢ prim_rec M M1 M2] [⊢ V]                   
-  
-      % to match: rec(succ N; base; step) = step(N, rec(N; base; step))
+
+
+%{
+
+If M evaluated to N and N is normal then we can weak normalize on M
+
+}%
+inductive WN : [⊢ tm A] → ctype =
+  | doneWN : Eval [⊢ M] [⊢ N] → Normal [⊢ N] → WN [⊢ M]
 ;
+

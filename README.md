@@ -6,8 +6,8 @@ Gödel's System T is an extension of the Natural Deduction Calculus (ND) which i
 
 Although System T was first introduced in 1958 [2], the logic has maintained relevance. For example, it was recently mechanized in Agda [3], and is often used as a jumping-off point for modern works (as seen in [4]). System T has many properties of note; studied here are the Weak Normalization, as well as the ability to encode typical arithmetic operations via primitive recursion. Weak normalization says that every proof either steps, or reaches a normal form [5]. One can also prove strong normalization, which says that every proof reaches a normal form [4], but that was not feasible given the time constraints of this project. The relevance of these properties are further explored in the formalization section. Finally, it seemed natural to include a mechanization of System T in Beluga; proof mechanization and the Curry-Howard correspondence have been central themes of this course, and the mechanization of System T in Agda motivates a similar mechanization in Beluga. 
 
+## What can you find on our repository? 
 
-DESCRIPTION OF CONTENT
 
 References:
 

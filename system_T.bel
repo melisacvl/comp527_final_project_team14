@@ -46,11 +46,8 @@ LF tm : tp → type =
   % primitive recursion     
   | prim_rec : tm nat → tm A → (tm nat → tm A → tm A) → tm A
 
-  %%%%% QUESTION %%%%%%%
-  % a step function to be used inside primitive recursion -- but this is abstract, im using it for the sake of weak normalization
-  % idk if i can actually use it inside any of the arithmetic operations or rather should i?? cus its abstract, right? idk
-  % the arithmetic operations work with or without
-  | step :  tm nat → tm A → tm A 
+  % need to define a step for Weak Normalization 
+  | step : tm nat → tm A → tm A 
 
   % natural deduction calculus, written in programming jargon
   | lam : (tm A → tm B) → tm (A arr B)
@@ -108,7 +105,7 @@ We output x, which we had already established is the predecesor of n.
 
 }%
 
-rec pred : [ ⊢ tm (nat arr nat)] = [ ⊢ lam \n. prim_rec n zero (\x. \r. step x r)];
+rec pred : [ ⊢ tm (nat arr nat)] = [ ⊢ lam \n. prim_rec n zero (\x. \r. r)];
 
 %%%% Addition %%%%
 %{ The definition of addition is as follows: 
@@ -137,7 +134,7 @@ We finally output the successor of r, which equivalently gives x+n+1 = (x+1)+n =
 
 }%
 
-rec add : [ ⊢ tm ((nat ∧ nat) arr nat)] = [ ⊢ lam \a. (prim_rec (fst a) (snd a) (\x. \r. step x (succ r)))];
+rec add : [ ⊢ tm ((nat ∧ nat) arr nat)] = [ ⊢ lam \a. (prim_rec (fst a) (snd a) (\x. \r. succ r))];
 
 %%%% Multiplication %%%%
 %{ The definition of multiplication is as follows:
@@ -166,7 +163,7 @@ As we cannot call add directly, we use its definition inline with a second primi
 
 }%
 
-rec multiply : [ ⊢ tm ((nat ∧ nat) arr nat) ] = [ ⊢ lam \a. prim_rec (fst a) zero (\x. \r. step x (prim_rec r (snd a) (\x'. \r'. step x' (succ r'))))];
+rec multiply : [ ⊢ tm ((nat ∧ nat) arr nat) ] = [ ⊢ lam \a. prim_rec (fst a) zero (\x. \r. prim_rec r (snd a) (\x'. \r'. succ r'))];
 
 %%%% Subtraction %%%%
 %{ The definition of subtraction is as follows:
@@ -195,7 +192,7 @@ As we cannot call pred directly, we use its definition inline with a second prim
 
 }%
 
-rec subtract : [ ⊢ tm ((nat ∧ nat) arr nat)] = [ ⊢ lam \a. prim_rec (snd a) (fst a) (\x. \r. prim_rec r zero (\x'. \r'. step x' r'))];
+rec subtract : [ ⊢ tm ((nat ∧ nat) arr nat)] = [ ⊢ lam \a. prim_rec (snd a) (fst a) (\x. \r. prim_rec r zero (\x'. \r'. r'))];
 
 %%%% Exponentiation %%%%
 %{ The definition of exponentiation is as follows:
@@ -224,7 +221,7 @@ m * (m^k) = m^(k+1) = m^n.
 
 }%
 
-rec exp : [ ⊢ tm ((nat ∧ nat) arr nat) ] = [ ⊢ lam \a. prim_rec (snd a) (succ zero) (\x. \r. step x (prim_rec (fst a) zero (\x'. \r'. step x' (prim_rec r x' (\x''. \r''. step x'' (succ r''))))))];
+rec exp : [ ⊢ tm ((nat ∧ nat) arr nat) ] = [ ⊢ lam \a. prim_rec (snd a) (succ zero) (\x. \r. prim_rec (fst a) zero (\x'. \r'. prim_rec r x' (\x''. \r''. succ r'')))];
 
 %%%%%%%%%%%%%%%%%%%%%%%%
 %% Weak Normalization %%
@@ -233,10 +230,11 @@ rec exp : [ ⊢ tm ((nat ∧ nat) arr nat) ] = [ ⊢ lam \a. prim_rec (snd a) (s
 % First, we need to define what it means to be in Normal form in System T, i.e. a fully reduced term
 % We add the introduction rules for natural numbers zero and successor since these are final
 % We do not add the elimination rule, i.e. the primitive recursion since it is not in Normal form as it still requires a reduction
+schema eval_cxt = tm A;
 
-inductive Normal : [⊢ tm A] → ctype =
-  | natNorml : Normal [⊢ zero]
-  | natNormr : Normal [⊢ M] → Normal [⊢ succ M]
+inductive Normal : (Γ : eval_cxt) [Γ ⊢ tm A] → ctype =
+  | natNorml : Normal [Γ ⊢ zero]
+  | natNormr : Normal [Γ ⊢ M] → Normal [Γ ⊢ succ M]
 ;
 
 % Next, we define how terms compute using Eval, which is our definition of what "reducing to" means
@@ -251,49 +249,32 @@ We need to:
 - evaluate if prim_rec gets the base case
 - evaluate if prim_rec gets the step case
 
-}%
-
-%%%%% QUESTION %%%%%%%
-% without step, doing just M2 gives free meta variable error...
-% or should i just use step in the weak normalization proof and not add it in the arithmetic stuff??
-
-%{
-inductive Eval : [⊢ tm A] → [⊢ tm A] → ctype = 
-  | doneEval : Normal [⊢ M] → Eval [⊢ M] [⊢ M]
-  %%% Questions %%%
-  % without the assumptions x and y, we get that M2 is a meta-variable, but why? why does it work like this and is it necessarily correct that it works?
-  %| prim_recEvalBase : Eval [⊢ M] [⊢ zero] → Eval [⊢ prim_rec M M1 (\x. \y. M2)] [⊢ M1]  % to match: rec(0; base; step) = base
-
-  %| prim_recEvalStep : Eval [⊢ M] [⊢ succ N] → Eval [⊢ prim_rec N M1 (\x. \y. M2)] [⊢ R] → Eval [⊢ app M2 (N R)] [⊢ V]
- %→ %Eval [⊢ prim_rec M M1 M2] [⊢ V]                   
-  %| appEval : 
-  
-;}%
-%{
-
 to match: rec(succ N; base; step) = step(N, rec(N; base; step))
 what we want the Eval step to basically say:
 
 if M evaluates to succ N and prim_rec N M1 M2 evaluates to the result recursion R and step M2 using N and R evaluates to final form V 
-
 then eval prim_rec M M1 M2 will evaluate to V
 
 }%
 
-% but this works!!!
-inductive Eval : [⊢ tm A] → [⊢ tm A] → ctype =
-  | doneEval : Normal [⊢ M] → Eval [⊢ M] [⊢ M]
-  | prim_recEvalBase : Eval [⊢ M] [⊢ zero] → Eval [⊢ prim_rec M M1 (\x. \y. step x y)] [⊢ M1]
-  | prim_recEvalStep : Eval [⊢ M] [⊢ succ N] → Eval [⊢ prim_rec N M1 (\x. \y. step x y)] [⊢ R] → Eval [⊢ step N R] [⊢ V] → Eval [⊢ prim_rec M M1 (\x. \y. step x y)] [⊢ V]
+
+
+inductive Eval : (Γ : eval_cxt) [Γ ⊢ tm A] → [Γ ⊢ tm A] → ctype =
+  | doneEval : Normal [Γ ⊢ M] → Eval [Γ ⊢ M] [Γ ⊢ M]
+  | prim_recEvalBase : Eval [ Γ ⊢ M] [Γ ⊢ zero] → Eval [Γ ⊢ prim_rec M M1 (\x. \y. step x y)] [Γ ⊢ M1]
+  | prim_recEvalStep : Eval [Γ ⊢ M] [Γ ⊢ succ N] → Eval [Γ ⊢ prim_rec N M1 (\x. \y. step x y)] [Γ ⊢ R] → Eval [Γ ⊢ step N R] [Γ ⊢ V] → Eval [Γ⊢ prim_rec M M1 (\x. \y. step x y)] [Γ⊢ V]
+  | appEval : Eval [ Γ ⊢ M1] [Γ ⊢ M1'] → Eval [ Γ ⊢ app M1 M2] [Γ  ⊢ app M1' M2]
+  
+  
+  %| lamEval : Eval [Γ, x:tm A ⊢ M] [Γ, x:tm A ⊢ M'] → Eval [Γ  ⊢ x arr M] [ Γ ⊢ lam M']
 ;
 
 %{
 
-If M evaluated to N and N is normal then we can weak normalize on M
+If M evaluates to N then we can weak normalize on N
 
 }%
 
-inductive WN : [⊢ tm A] → ctype =
-  | doneWN : Eval [⊢ M] [⊢ N] → Normal [⊢ N] → WN [⊢ M]
+inductive WN : (Γ : eval_cxt) [⊢ tm A] → ctype =
+  | doneWN : Eval [⊢ M] [⊢ N] → WN [⊢ N]
 ;
-

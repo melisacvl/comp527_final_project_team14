@@ -9,7 +9,9 @@ Although System T was first introduced in 1958 [2], the logic has maintained rel
 ## Description of deliverables
 - The Beluga file titled system_T.bel is our Beluga Mechanization.
 - The PDF titled Formalization and WN is our on-paper formalization of System T and our Weak Normalization proof.
-- The PDF titled COMP 527 Consent To Post on Ed includes our consent to post as well as each members contributions to the project. 
+- The PDF titled COMP 527 Consent To Post on Ed includes our consent to post as well as each members contributions to the project.
+- The PDF titled Formalization and Mechanization of Gödel’s System T is our 2-page abstract.
+- Finally, the link to our video: 
 
 
 ### References:

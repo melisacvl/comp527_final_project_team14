@@ -46,6 +46,12 @@ LF tm : tp → type =
   % primitive recursion     
   | prim_rec : tm nat → tm A → (tm nat → tm A → tm A) → tm A
 
+  %%%%% QUESTION %%%%%%%
+  % a step function to be used inside primitive recursion -- but this is abstract, im using it for the sake of weak normalization
+  % idk if i can actually use it inside any of the arithmetic operations or rather should i?? cus its abstract, right? idk
+  % the arithmetic operations work with or without
+  | step :  tm nat → tm A → tm A 
+
   % natural deduction calculus, written in programming jargon
   | lam : (tm A → tm B) → tm (A arr B)
   | app : tm (A arr B) → tm A → tm B       
@@ -68,7 +74,7 @@ LF tm : tp → type =
 %% Verification of Natural Deduction %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% The following proofs are to verify that we have correctly inherited natural deducition calculus
+% The following proofs are to verify that we have correctly inherited natural deduction calculus
 
 rec nd_a : [ ⊢ tm (((A arr B) ∧ (A ∨ C)) arr (B ∨ C)) ] = [ ⊢ lam \u. (case_of (snd u) (\a. (inl (app (fst u) a))) (\c. (inr c)))];
 rec nd_b : [ ⊢ tm ((A ∧ not B) arr not(A arr B))] = [ ⊢ lam \u. (notI \p. \v. (notE (snd u)) (app v (fst u)))];
@@ -102,7 +108,7 @@ We output x, which we had already established is the predecesor of n.
 
 }%
 
-rec pred : [ ⊢ tm (nat arr nat)] = [ ⊢ lam \n. prim_rec n zero (\x. \r. x)];
+rec pred : [ ⊢ tm (nat arr nat)] = [ ⊢ lam \n. prim_rec n zero (\x. \r. step x r)];
 
 %%%% Addition %%%%
 %{ The definition of addition is as follows: 
@@ -131,7 +137,7 @@ We finally output the successor of r, which equivalently gives x+n+1 = (x+1)+n =
 
 }%
 
-rec add : [ ⊢ tm ((nat ∧ nat) arr nat)] = [ ⊢ lam \a. (prim_rec (fst a) (snd a) (\x. \r. (succ r)))];
+rec add : [ ⊢ tm ((nat ∧ nat) arr nat)] = [ ⊢ lam \a. (prim_rec (fst a) (snd a) (\x. \r. step x (succ r)))];
 
 %%%% Multiplication %%%%
 %{ The definition of multiplication is as follows:
@@ -160,7 +166,7 @@ As we cannot call add directly, we use its definition inline with a second primi
 
 }%
 
-rec multiply : [ ⊢ tm ((nat ∧ nat) arr nat) ] = [ ⊢ lam \a. prim_rec (fst a) zero (\x. \r. prim_rec r (snd a) (\x'. \r'. succ r'))];
+rec multiply : [ ⊢ tm ((nat ∧ nat) arr nat) ] = [ ⊢ lam \a. prim_rec (fst a) zero (\x. \r. step x (prim_rec r (snd a) (\x'. \r'. step x' (succ r'))))];
 
 %%%% Subtraction %%%%
 %{ The definition of subtraction is as follows:
@@ -189,7 +195,7 @@ As we cannot call pred directly, we use its definition inline with a second prim
 
 }%
 
-rec subtract : [ ⊢ tm ((nat ∧ nat) arr nat)] = [ ⊢ lam \a. prim_rec (snd a) (fst a) (\x. \r. prim_rec r zero (\x'. \r'. x'))];
+rec subtract : [ ⊢ tm ((nat ∧ nat) arr nat)] = [ ⊢ lam \a. prim_rec (snd a) (fst a) (\x. \r. prim_rec r zero (\x'. \r'. step x' r'))];
 
 %%%% Exponentiation %%%%
 %{ The definition of exponentiation is as follows:
@@ -218,7 +224,7 @@ m * (m^k) = m^(k+1) = m^n.
 
 }%
 
-rec exp : [ ⊢ tm ((nat ∧ nat) arr nat) ] = [ ⊢ lam \a. prim_rec (snd a) (succ zero) (\x. \r. prim_rec (fst a) zero (\x'. \r'. prim_rec r x' (\x''. \r''. succ r'')))];
+rec exp : [ ⊢ tm ((nat ∧ nat) arr nat) ] = [ ⊢ lam \a. prim_rec (snd a) (succ zero) (\x. \r. step x (prim_rec (fst a) zero (\x'. \r'. step x' (prim_rec r x' (\x''. \r''. step x'' (succ r''))))))];
 
 %%%%%%%%%%%%%%%%%%%%%%%%
 %% Weak Normalization %%
@@ -247,33 +253,46 @@ We need to:
 
 }%
 
+%%%%% QUESTION %%%%%%%
+% without step, doing just M2 gives free meta variable error...
+% or should i just use step in the weak normalization proof and not add it in the arithmetic stuff??
+
+%{
 inductive Eval : [⊢ tm A] → [⊢ tm A] → ctype = 
   | doneEval : Normal [⊢ M] → Eval [⊢ M] [⊢ M]
   %%% Questions %%%
   % without the assumptions x and y, we get that M2 is a meta-variable, but why? why does it work like this and is it necessarily correct that it works?
-  | prim_recEvalBase : Eval [⊢ M] [⊢ zero] → Eval [⊢ prim_rec M M1 (\x. \y. M2)] [⊢ M1]  % to match: rec(0; base; step) = base
+  %| prim_recEvalBase : Eval [⊢ M] [⊢ zero] → Eval [⊢ prim_rec M M1 (\x. \y. M2)] [⊢ M1]  % to match: rec(0; base; step) = base
 
   %| prim_recEvalStep : Eval [⊢ M] [⊢ succ N] → Eval [⊢ prim_rec N M1 (\x. \y. M2)] [⊢ R] → Eval [⊢ app M2 (N R)] [⊢ V]
  %→ %Eval [⊢ prim_rec M M1 M2] [⊢ V]                   
   %| appEval : 
-;
+  
+;}%
 %{
 
 to match: rec(succ N; base; step) = step(N, rec(N; base; step))
 what we want the Eval step to basically say:
 
-if eval M to succ N and eval prim_rec N M1 M2 to the result recursion R and eval step M2 using N and R to final form V 
+if M evaluates to succ N and prim_rec N M1 M2 evaluates to the result recursion R and step M2 using N and R evaluates to final form V 
 
 then eval prim_rec M M1 M2 will evaluate to V
 
 }%
 
+% but this works!!!
+inductive Eval : [⊢ tm A] → [⊢ tm A] → ctype =
+  | doneEval : Normal [⊢ M] → Eval [⊢ M] [⊢ M]
+  | prim_recEvalBase : Eval [⊢ M] [⊢ zero] → Eval [⊢ prim_rec M M1 (\x. \y. step x y)] [⊢ M1]
+  | prim_recEvalStep : Eval [⊢ M] [⊢ succ N] → Eval [⊢ prim_rec N M1 (\x. \y. step x y)] [⊢ R] → Eval [⊢ step N R] [⊢ V] → Eval [⊢ prim_rec M M1 (\x. \y. step x y)] [⊢ V]
+;
 
 %{
 
 If M evaluated to N and N is normal then we can weak normalize on M
 
 }%
+
 inductive WN : [⊢ tm A] → ctype =
   | doneWN : Eval [⊢ M] [⊢ N] → Normal [⊢ N] → WN [⊢ M]
 ;

@@ -266,13 +266,16 @@ rec exp : [ ⊢ tm ((nat ∧ nat) arr nat) ] =
 schema eval_cxt = tm A;
 
 % First, we need to define what it means to be in Normal form in System T, i.e. a fully reduced term
-% We add the introduction rules for natural numbers zero and successor since these are final as well as lambda abstraction
+% We add the introduction rules for natural numbers zero and successor since these are final 
 % We do not add the elimination rule, i.e. the primitive recursion and application since it is not in Normal form as it still requires a reduction
 
 inductive Normal : (Γ : eval_cxt) [Γ ⊢ tm A] → ctype =
   | natNorml : Normal [Γ ⊢ zero]
   | natNormr : Normal [Γ ⊢ M] → Normal [Γ ⊢ succ M]
-  | lamNorm : Normal [Γ, x:tm A ⊢ M] → Normal [Γ ⊢ lam (\x. M)] % need to fix
+  
+  % We could not get lamNorm to work but the idea is that if M is normal, then so should its lambda abstraction 
+  % | lamNorm : Normal [Γ, x:tm A ⊢ M] → Normal [Γ ⊢ lam (\x. M)]
+
 ;
 
 % Next, we define how terms compute using Eval, which is our definition of what "reducing to" means
@@ -299,12 +302,16 @@ This is where our use of term step is, as explained earlier.
 }%
 
 inductive Eval : (Γ : eval_cxt) [Γ ⊢ tm A] → [Γ ⊢ tm A] → ctype =
-  | doneEval : Normal [Γ ⊢ M] → Eval [Γ ⊢ M] [Γ ⊢ M]
-  | prim_recEvalBase : Eval [ Γ ⊢ M] [Γ ⊢ zero] → Eval [Γ ⊢ prim_rec M M1 (\x. \y. step x y)] [Γ ⊢ M1]
-  | prim_recEvalStep : Eval [Γ ⊢ M] [Γ ⊢ succ N] → Eval [Γ ⊢ prim_rec N M1 (\x. \y. step x y)] [Γ ⊢ R] →
-    Eval [Γ ⊢ step N R] [Γ ⊢ V] →  
-    Eval [Γ ⊢ prim_rec M M1 (\x. \y. step x y)] [Γ ⊢ V]
-  | appEval : Eval [Γ ⊢ M1] [Γ ⊢ M1'] → Eval [Γ ⊢ app M1 M2] [Γ  ⊢ app M1' M2]
+  | doneEval : Normal [Γ ⊢ M] → 
+      Eval [Γ ⊢ M] [Γ ⊢ M]
+  | prim_recEvalBase : Eval [ Γ ⊢ M] [Γ ⊢ zero] → 
+      Eval [Γ ⊢ prim_rec M M1 (\x. \y. step x y)] [Γ ⊢ M1]
+  | prim_recEvalStep : Eval [Γ ⊢ M] [Γ ⊢ succ N] → 
+      Eval [Γ ⊢ prim_rec N M1 (\x. \y. step x y)] [Γ ⊢ R] →
+        Eval [Γ ⊢ step N R] [Γ ⊢ V] →  
+          Eval [Γ ⊢ prim_rec M M1 (\x. \y. step x y)] [Γ ⊢ V]
+  | appEval : Eval [Γ ⊢ M1] [Γ ⊢ M1'] → 
+      Eval [Γ ⊢ app M1 M2] [Γ  ⊢ app M1' M2]
 ;
 
 %{ And finally, we define WN inductively:  
